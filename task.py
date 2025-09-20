@@ -10,8 +10,8 @@ def main() -> None:
     parser.add_argument("-a", "--add", type=str, help="Add a new task")
     parser.add_argument("-u", "--update", nargs=2, metavar=("ID", "DESC"), help="Update a task's description by ID")
     parser.add_argument("-d", "--delete", type=int, help="Delete a task by ID")
-    parser.add_argument("-s", "--start", help="Marks a task as 'in progress'")
-    parser.add_argument("-f", "--finish", help="Marks a task as 'done'")
+    parser.add_argument("-s", "--start", type=int, help="Marks a task as 'in progress'")
+    parser.add_argument("-f", "--finish", type=int, help="Marks a task as 'done'")
     # List argument (lists all, lists all done, lists all in progress)
 
 
@@ -20,33 +20,38 @@ def main() -> None:
     task_file = 'tasks.json'
 
     if args.add:
-        now = datetime.datetime.now().isoformat()
-        new_task = {
-            'id': None,  # to be set later
-            'description': args.add,
-            'status': 'todo',
-            'created_at': now,
-            'updated_at': now,
-        }
         try:
-            add_new_task(file_name=f"{task_file}", new_task=new_task)
+            add_new_task(file_name=task_file, task_description=args.add)
         except UnboundLocalError:
             sys.exit("Add Task")
     
     if args.update:
         task_id_str, new_desc = args.update
         task_id = int(task_id_str)
-        update_task(file_name=f"{task_file}", task_id=task_id, new_desc=new_desc)
+        update_task(file_name=task_file, task_id=task_id, new_desc=new_desc)
 
     if args.delete:
-        delete_task(file_name=f"{task_file}", task_id=args.delete)
+        delete_task(file_name=task_file, task_id=args.delete)
+
+    if args.start:
+        mark_in_progress_task(file_name=task_file, task_id=args.start)
+    
+    if args.finish:
+        mark_done_task(file_name=task_file, task_id=args.finish)
 
 
-
-def add_new_task(file_name: str, new_task: dict) -> None:
+def add_new_task(file_name: str, task_description: str) -> None:
     """
     Creates New Tasks and adds them to tasks.json, creates the file if it does not yet exist
     """
+    now = datetime.datetime.now().isoformat()
+    new_task = {
+        'id': None,  # to be set later
+        'description': task_description,
+        'status': 'todo',
+        'created_at': now,
+        'updated_at': now,
+    }
     path = Path(f"{file_name}")
     if path.exists():
         with path.open("r") as f:
@@ -61,7 +66,7 @@ def add_new_task(file_name: str, new_task: dict) -> None:
 
     # Rewrites entire file every time
     with path.open("w") as f:
-        json.dump(tasks, f, indent=2)
+        f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
     
     print(f"Added new task! Task ID: {new_task['id']}")
 
@@ -87,7 +92,7 @@ def update_task(file_name: str, task_id: int, new_desc: str) -> None:
             task["description"] = new_desc
             task["updated_at"] = datetime.datetime.now().isoformat()
             with path.open("w") as f:
-                json.dump(tasks, f, indent=2)
+                f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
             print(f"Updated task {task_id}.")
             return
     
@@ -117,10 +122,62 @@ def delete_task(file_name: str, task_id: int) -> None:
         print(f"No task with ID {task_id} found.")
 
     with path.open("w") as f:
-        json.dump(tasks, f, indent=2)
+        f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
     
     print(f"Deleted task {task_id}.")
 
+
+def mark_in_progress_task(file_name: str, task_id: int) -> None:
+    """
+    Updates status of task to "in-progress"
+    """
+    path = Path(file_name)
+    if not path.exists():
+        print("No tasks file found.")
+        return
+    
+    try:
+        with path.open("r") as f:
+            tasks = json.load(f)
+    except json.JSONDecodeError:
+        print("Tasks file is not valid JSON.")
+        return
+    
+    for task in tasks:
+        if task.get("id") == task_id:
+            task["status"] = "in-progress"
+            with path.open("w") as f:
+                f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
+            print(f"Updated task {task_id} to in-progress.")
+            return
+    
+    print(f"No task with ID {task_id} found.")
+
+def mark_done_task(file_name: str, task_id: int) -> None:
+    """
+    Updates status of task to "done"
+    """
+    path = Path(file_name)
+    if not path.exists():
+        print("No tasks file found.")
+        return
+    
+    try:
+        with path.open("r") as f:
+            tasks = json.load(f)
+    except json.JSONDecodeError:
+        print("Tasks file is not valid JSON.")
+        return
+    
+    for task in tasks:
+        if task.get("id") == task_id:
+            task["status"] = "done"
+            with path.open("w") as f:
+                f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
+            print(f"Finished Task: {task_id}, status changed to 'done'.")
+            return
+    
+    print(f"No task with ID {task_id} found.")
 
 
 if __name__ == "__main__":
