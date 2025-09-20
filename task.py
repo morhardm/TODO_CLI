@@ -12,12 +12,11 @@ def main() -> None:
     parser.add_argument("-d", "--delete", type=int, help="Delete a task by ID")
     parser.add_argument("-s", "--start", type=int, help="Marks a task as 'in progress'")
     parser.add_argument("-f", "--finish", type=int, help="Marks a task as 'done'")
-    # List argument (lists all, lists all done, lists all in progress)
-
+    parser.add_argument("-l", "--list", nargs="?", const="all", default=None, help='List tasks, optionally fitler by status')
 
     args = parser.parse_args()
 
-    task_file = 'tasks.json'
+    task_file = 'todo.json'
 
     if args.add:
         try:
@@ -38,6 +37,11 @@ def main() -> None:
     
     if args.finish:
         mark_done_task(file_name=task_file, task_id=args.finish)
+
+    if args.list:
+        status = None if args.list == "all" else args.list
+        list_tasks(task_file, status)
+        return
 
 
 def add_new_task(file_name: str, task_description: str) -> None:
@@ -146,12 +150,14 @@ def mark_in_progress_task(file_name: str, task_id: int) -> None:
     for task in tasks:
         if task.get("id") == task_id:
             task["status"] = "in-progress"
+            task["updated_at"] = datetime.datetime.now().isoformat()
             with path.open("w") as f:
                 f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
             print(f"Updated task {task_id} to in-progress.")
             return
     
     print(f"No task with ID {task_id} found.")
+
 
 def mark_done_task(file_name: str, task_id: int) -> None:
     """
@@ -172,12 +178,57 @@ def mark_done_task(file_name: str, task_id: int) -> None:
     for task in tasks:
         if task.get("id") == task_id:
             task["status"] = "done"
+            task["updated_at"] = datetime.datetime.now().isoformat()
             with path.open("w") as f:
                 f.write('[\n' + ',\n'.join(json.dumps(t) for t in tasks) + '\n]')
             print(f"Finished Task: {task_id}, status changed to 'done'.")
             return
     
     print(f"No task with ID {task_id} found.")
+
+
+def list_tasks(file_name: str, status: str | None = None) -> None:
+    path = Path(file_name)
+    if not path.exists():
+        print("No tasks file found.")
+        return
+
+    try:
+        with path.open("r") as f:
+            tasks = json.load(f)
+    except json.JSONDecodeError:
+        print("Tasks file is not valid JSON")
+        return
+    
+    rows = []
+    for task in tasks:
+        if status is None or task.get("status") == status:
+            rows.append([
+                task.get("id", ""),
+                task.get("description", ""),
+                task.get("status", ""),
+                task.get("created_at", ""),
+                task.get("updated_at", ""),
+            ])
+
+    if not rows:
+        msg = f"No tasks found for status: {status}." if status else "No tasks found."
+        print(msg)
+        return
+    
+    headers = ["ID", "Description", "Status", "Created", "Updated"]
+    # column widths
+    widths = [len(h) for h in headers]
+    for r in rows:
+        for i, cell in enumerate(r):
+            widths[i] = max(widths[i], len(str(cell)))
+
+    def fmt(r): return " | ".join(str(c).ljust(widths[i]) for i, c in enumerate(r))
+
+    print(fmt(headers))
+    print("-" * (sum(widths) + 3 * (len(widths) - 1)))
+    for r in rows:
+        print(fmt(r))
 
 
 if __name__ == "__main__":
