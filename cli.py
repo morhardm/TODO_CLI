@@ -4,10 +4,11 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description="To-Do List CLI")
-    parser.add_argument("-task", type=str, help="Task description")
-    args = parser.parse_args()
+    parser.add_argument("-a", "--add", type=str, help="Add a new task")
+    tasks = parser.parse_args()
     
-    print("args.task:", args.task)
+    print("Added Task:", tasks.add)
+
 
 if __name__ == "__main__":
     main()
