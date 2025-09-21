@@ -1,6 +1,6 @@
 # todo-cli
 
-A tiny, zero-dependency **Task Tracker CLI** that stores tasks in a JSON file and gives you clean commands like:
+A **Task Tracker CLI** that stores tasks in a JSON file and gives you commands like:
 
 task add "Buy milk"
 task update 1 "Buy oat milk"
@@ -22,8 +22,9 @@ pipx install git+https://github.com/<morhardm>/todo-cli.git
 
 After install, the task command should be on your PATH.
 
+--- 
 
-Usage
+## Usage
 
 # Add
 task add "Walk the dog"
@@ -44,7 +45,10 @@ task list done
 # Delete
 task delete 1
 
-Where data is stored
+---
+
+## Where data is stored
+
 By default, the CLI reads/writes todo.json in your current working directory.
 Run task in different folders to keep separate lists per project.
 
