@@ -2,7 +2,7 @@ import pytest
 import json
 from pathlib import Path
 
-from task import (
+from todo.task import (
     add_new_task,
     delete_task,
     update_task

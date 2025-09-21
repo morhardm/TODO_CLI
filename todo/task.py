@@ -1,47 +1,49 @@
 import argparse
 import datetime
 import json
-import sys
 from pathlib import Path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="To-Do CLI", description="To-Do List CLI")
-    parser.add_argument("-a", "--add", type=str, help="Add a new task")
-    parser.add_argument("-u", "--update", nargs=2, metavar=("ID", "DESC"), help="Update a task's description by ID")
-    parser.add_argument("-d", "--delete", type=int, help="Delete a task by ID")
-    parser.add_argument("-s", "--start", type=int, help="Marks a task as 'in progress'")
-    parser.add_argument("-f", "--finish", type=int, help="Marks a task as 'done'")
-    parser.add_argument("-l", "--list", nargs="?", const="all", default=None, help='List tasks, optionally fitler by status')
+    parser = argparse.ArgumentParser(prog="task", description="To-Do List CLI")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_add = sub.add_parser("add", help="Add a new task")
+    p_add.add_argument("desc")
+
+    p_update = sub.add_parser("update", help="Update a tasks's description by ID")
+    p_update.add_argument("id", type=int)
+    p_update.add_argument("desc")
+
+    p_delete = sub.add_parser("delete", help="Delete a task by ID")
+    p_delete.add_argument("id", type=int)
+
+    p_mark_in_progress = sub.add_parser("mark-in-progress", help="Mark a task as in progress")
+    p_mark_in_progress.add_argument("id", type=int)
+
+    p_mark_done = sub.add_parser("mark-done", help="Mark task as done")
+    p_mark_done.add_argument("id", type=int)
+
+    p_list = sub.add_parser("list", help='List tasks (optional status: "todo", "in-progress", "done")')
+    p_list.add_argument("status", nargs="?", default="all")
 
     args = parser.parse_args()
 
     task_file = 'todo.json'
 
-    if args.add:
-        try:
-            add_new_task(file_name=task_file, task_description=args.add)
-        except UnboundLocalError:
-            sys.exit("Add Task")
-    
-    if args.update:
-        task_id_str, new_desc = args.update
-        task_id = int(task_id_str)
-        update_task(file_name=task_file, task_id=task_id, new_desc=new_desc)
-
-    if args.delete:
-        delete_task(file_name=task_file, task_id=args.delete)
-
-    if args.start:
-        mark_in_progress_task(file_name=task_file, task_id=args.start)
-    
-    if args.finish:
-        mark_done_task(file_name=task_file, task_id=args.finish)
-
-    if args.list:
-        status = None if args.list == "all" else args.list
+    if args.cmd == "add":
+        add_new_task(file_name=task_file, task_description=args.desc)
+    elif args.cmd == "update":
+        update_task(file_name=task_file, task_id=args.id, new_desc=args.desc)
+    elif args.cmd == "delete":
+        delete_task(file_name=task_file, task_id=args.id)
+    elif args.cmd == "mark-in-progress":
+        mark_in_progress_task(file_name=task_file, task_id=args.id)
+    elif args.cmd == "mark-done":
+        mark_done_task(file_name=task_file, task_id=args.id)
+    elif args.cmd == "list":
+        status = None if args.status == "all" else args.status
         list_tasks(task_file, status)
-        return
 
 
 def add_new_task(file_name: str, task_description: str) -> None:
