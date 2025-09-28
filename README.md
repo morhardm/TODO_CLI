@@ -32,8 +32,8 @@ task add "Walk the dog"
 task update 1 "Walk the dog (park at 6pm)"
 
 # Start / Finish
-task start 1
-task finish 1
+task mark-in-progress 1
+task mark-done 1
 
 # List (all or by status)
 task list
